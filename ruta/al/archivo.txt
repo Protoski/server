@@ -757,3 +757,14 @@ Pureza Oxígeno: 256.0
 Presión Línea: 256.0
 Caudal: 257.0 m³/h
 -----------------------------
+Timestamp: 2024-07-29 15:34:07
+Compresor 1: En línea
+Compresor 2: Off
+Temp. Secador 1: 21.7 C
+Humedad Secador 1: 61.8 %
+Temp. Secador 2: nan C
+Humedad Secador 2: nan %
+Pureza Oxígeno: 285.0
+Presión Línea: 288.0
+Caudal: 280.0 m³/h
+-----------------------------
