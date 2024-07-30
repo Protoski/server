@@ -1,0 +1,1 @@
+{"data": [{"timestamp": "2024-07-29 20:51:02", "planta": "Planta 1", "compresor1": 1.0, "compresor2": 0.0, "temp1": 23.0, "humedad1": 54.5, "temp2": NaN, "humedad2": NaN, "pureza_oxigeno": 263.0, "presion_linea": 265.0, "caudal": 266.0}]}
