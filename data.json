@@ -1,7 +1,1 @@
-{
-    "temperatura": 25.5,
-    "humedad": 60.2,
-    "timestamp": "2025-11-26 10:30:00",
-    "dispositivo": "ESP32-001",
-    "ubicacion": "Oficina Principal"
-}
+{"temperatura":25.2,"humedad":63.6,"timestamp":"2025-11-26 10:50:33","dispositivo":"ESP32-001","ubicacion":"Oficina"}
