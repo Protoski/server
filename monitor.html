@@ -104,7 +104,7 @@
             line-height: 1;
         }
 
-        .card-value span {
+        .card-value span.unit {
             font-size: 1.5rem;
             color: rgba(255,255,255,0.5);
         }
@@ -178,10 +178,6 @@
             box-shadow: 0 6px 30px rgba(59,130,246,0.5);
         }
 
-        .refresh-btn:active {
-            transform: scale(0.95);
-        }
-
         .refresh-btn.loading {
             animation: spin 1s linear infinite;
         }
@@ -191,81 +187,6 @@
             to { transform: rotate(360deg); }
         }
 
-        .config-note {
-            background: rgba(251, 191, 36, 0.1);
-            border: 1px solid rgba(251, 191, 36, 0.3);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 30px;
-        }
-
-        .config-note h4 {
-            color: #fbbf24;
-            margin-bottom: 10px;
-        }
-
-        .config-note code {
-            background: rgba(0,0,0,0.3);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-family: monospace;
-        }
-
-        .error-message {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            display: none;
-        }
-
-        .gauge-container {
-            display: flex;
-            justify-content: center;
-            margin-top: 20px;
-        }
-
-        .gauge {
-            width: 150px;
-            height: 75px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .gauge-bg {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            background: conic-gradient(
-                from 180deg,
-                rgba(255,255,255,0.1) 0deg,
-                rgba(255,255,255,0.1) 180deg
-            );
-            position: absolute;
-            bottom: 0;
-        }
-
-        .gauge-fill {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            position: absolute;
-            bottom: 0;
-            transition: background 0.5s;
-        }
-
-        .gauge-center {
-            width: 120px;
-            height: 120px;
-            background: #1a1a2e;
-            border-radius: 50%;
-            position: absolute;
-            bottom: -60px;
-            left: 15px;
-        }
-
-        /* Auto-refresh indicator */
         .auto-refresh {
             display: flex;
             align-items: center;
@@ -280,6 +201,39 @@
             font-family: monospace;
             color: #4ade80;
         }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            display: none;
+            margin-bottom: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+
+        .progress-fill.temp {
+            background: linear-gradient(90deg, #3b82f6, #ef4444);
+        }
+
+        .progress-fill.hum {
+            background: linear-gradient(90deg, #f97316, #3b82f6);
+        }
     </style>
 </head>
 <body>
@@ -292,17 +246,6 @@
             </div>
         </header>
 
-        <!-- Nota de configuración (ocultar después de configurar) -->
-        <div class="config-note" id="configNote">
-            <h4>⚙️ Configuración Requerida</h4>
-            <p>Edita las variables al inicio del script:</p>
-            <ul style="margin: 10px 0 0 20px; line-height: 1.8;">
-                <li><code>GITHUB_USER</code> - Tu usuario de GitHub</li>
-                <li><code>GITHUB_REPO</code> - Nombre del repositorio</li>
-                <li><code>FILE_PATH</code> - Ruta al archivo data.json</li>
-            </ul>
-        </div>
-
         <div class="error-message" id="errorMessage">
             <h4>❌ Error de Conexión</h4>
             <p id="errorText">No se pudieron obtener los datos</p>
@@ -313,14 +256,10 @@
                 <div class="card-icon">🌡️</div>
                 <div class="card-label">Temperatura</div>
                 <div class="card-value">
-                    <span id="tempValue">--</span><span>°C</span>
+                    <span id="tempValue">--</span><span class="unit">°C</span>
                 </div>
-                <div class="gauge-container">
-                    <div class="gauge">
-                        <div class="gauge-bg"></div>
-                        <div class="gauge-fill" id="tempGauge"></div>
-                        <div class="gauge-center"></div>
-                    </div>
+                <div class="progress-bar">
+                    <div class="progress-fill temp" id="tempBar" style="width: 0%"></div>
                 </div>
             </div>
 
@@ -328,14 +267,10 @@
                 <div class="card-icon">💧</div>
                 <div class="card-label">Humedad</div>
                 <div class="card-value">
-                    <span id="humValue">--</span><span>%</span>
+                    <span id="humValue">--</span><span class="unit">%</span>
                 </div>
-                <div class="gauge-container">
-                    <div class="gauge">
-                        <div class="gauge-bg"></div>
-                        <div class="gauge-fill" id="humGauge"></div>
-                        <div class="gauge-center"></div>
-                    </div>
+                <div class="progress-bar">
+                    <div class="progress-fill hum" id="humBar" style="width: 0%"></div>
                 </div>
             </div>
         </div>
@@ -372,26 +307,20 @@
 
     <script>
         // ============== CONFIGURACIÓN ==============
-        // Cambiar estos valores según tu repositorio
-        const GITHUB_USER = 'TU_USUARIO';      // Tu usuario de GitHub
-        const GITHUB_REPO = 'TU_REPOSITORIO';  // Nombre del repositorio
-        const FILE_PATH = 'data.json';         // Ruta al archivo JSON
-        const BRANCH = 'main';                 // Rama (main o master)
-        
-        // Intervalo de actualización automática (en segundos)
-        const REFRESH_INTERVAL = 30;
+        const GITHUB_USER = 'Protoski';
+        const GITHUB_REPO = 'server';
+        const FILE_PATH = 'data.json';
+        const BRANCH = 'main';
+        const REFRESH_INTERVAL = 30; // segundos
         // ==========================================
 
         let countdown = REFRESH_INTERVAL;
         let countdownInterval;
 
-        // Construir URL de la API de GitHub (raw content)
         function getGitHubURL() {
-            // Usar raw.githubusercontent.com para obtener el contenido directamente
             return `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${BRANCH}/${FILE_PATH}?t=${Date.now()}`;
         }
 
-        // Función para obtener datos
         async function fetchData() {
             const btn = document.getElementById('refreshBtn');
             const statusDot = document.getElementById('statusDot');
@@ -406,7 +335,7 @@
                 const response = await fetch(getGitHubURL());
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    throw new Error(`HTTP ${response.status}`);
                 }
 
                 const data = await response.json();
@@ -414,62 +343,44 @@
                 
                 statusDot.classList.remove('offline');
                 statusText.textContent = 'En línea';
-                document.getElementById('configNote').style.display = 'none';
                 
             } catch (error) {
-                console.error('Error fetching data:', error);
+                console.error('Error:', error);
                 statusDot.classList.add('offline');
-                statusText.textContent = 'Error de conexión';
+                statusText.textContent = 'Error';
                 
-                document.getElementById('errorMessage').style.display = 'block';
+                errorMessage.style.display = 'block';
                 document.getElementById('errorText').textContent = error.message;
-                document.getElementById('dataStatus').textContent = 'Error: ' + error.message;
             }
 
             btn.classList.remove('loading');
             resetCountdown();
         }
 
-        // Actualizar interfaz con los datos
         function updateUI(data) {
             // Temperatura
             const temp = data.temperatura ?? data.temperature ?? '--';
             document.getElementById('tempValue').textContent = temp;
-            updateGauge('tempGauge', temp, 0, 50, '#ef4444', '#f97316');
+            // Barra de progreso (0-50°C)
+            const tempPercent = Math.min(Math.max((temp / 50) * 100, 0), 100);
+            document.getElementById('tempBar').style.width = tempPercent + '%';
             
             // Humedad
             const hum = data.humedad ?? data.humidity ?? '--';
             document.getElementById('humValue').textContent = hum;
-            updateGauge('humGauge', hum, 0, 100, '#3b82f6', '#06b6d4');
+            // Barra de progreso (0-100%)
+            document.getElementById('humBar').style.width = hum + '%';
             
-            // Información adicional
+            // Info adicional
             document.getElementById('lastUpdate').textContent = 
-                data.timestamp ?? data.fechaHora ?? new Date().toLocaleString();
+                data.timestamp ?? new Date().toLocaleString();
             document.getElementById('deviceId').textContent = 
-                data.dispositivo ?? data.device ?? 'ESP32';
+                data.dispositivo ?? 'ESP32';
             document.getElementById('location').textContent = 
-                data.ubicacion ?? data.location ?? 'No especificada';
-            document.getElementById('dataStatus').textContent = 'Datos recibidos correctamente';
+                data.ubicacion ?? 'No especificada';
+            document.getElementById('dataStatus').textContent = '✅ Datos recibidos';
         }
 
-        // Actualizar gauge visual
-        function updateGauge(elementId, value, min, max, colorStart, colorEnd) {
-            const gauge = document.getElementById(elementId);
-            if (!gauge || value === '--') return;
-            
-            const percentage = Math.min(Math.max((value - min) / (max - min) * 100, 0), 100);
-            const degrees = (percentage / 100) * 180;
-            
-            gauge.style.background = `conic-gradient(
-                from 180deg,
-                ${colorStart} 0deg,
-                ${colorEnd} ${degrees}deg,
-                transparent ${degrees}deg,
-                transparent 180deg
-            )`;
-        }
-
-        // Countdown para próxima actualización
         function startCountdown() {
             countdownInterval = setInterval(() => {
                 countdown--;
@@ -486,13 +397,13 @@
             document.getElementById('countdown').textContent = countdown;
         }
 
-        // Iniciar al cargar la página
+        // Iniciar
         document.addEventListener('DOMContentLoaded', () => {
             fetchData();
             startCountdown();
         });
 
-        // Detectar si la página está visible (pausar cuando está en segundo plano)
+        // Pausar cuando la pestaña está oculta
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 clearInterval(countdownInterval);
