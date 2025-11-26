@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor de Temperatura y Humedad</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4ade80;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.offline {
+            background: #f87171;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .card-label {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.6);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .card-value {
+            font-size: 3.5rem;
+            font-weight: 200;
+            line-height: 1;
+        }
+
+        .card-value span {
+            font-size: 1.5rem;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .card.temperature {
+            background: linear-gradient(135deg, rgba(239,68,68,0.2) 0%, rgba(239,68,68,0.05) 100%);
+            border-color: rgba(239,68,68,0.3);
+        }
+
+        .card.humidity {
+            background: linear-gradient(135deg, rgba(59,130,246,0.2) 0%, rgba(59,130,246,0.05) 100%);
+            border-color: rgba(59,130,246,0.3);
+        }
+
+        .info-panel {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .info-panel h3 {
+            font-weight: 400;
+            margin-bottom: 20px;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .info-label {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-value {
+            font-size: 1.1rem;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .refresh-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(59,130,246,0.4);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 30px rgba(59,130,246,0.5);
+        }
+
+        .refresh-btn:active {
+            transform: scale(0.95);
+        }
+
+        .refresh-btn.loading {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .config-note {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .config-note h4 {
+            color: #fbbf24;
+            margin-bottom: 10px;
+        }
+
+        .config-note code {
+            background: rgba(0,0,0,0.3);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .gauge-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .gauge {
+            width: 150px;
+            height: 75px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gauge-bg {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: conic-gradient(
+                from 180deg,
+                rgba(255,255,255,0.1) 0deg,
+                rgba(255,255,255,0.1) 180deg
+            );
+            position: absolute;
+            bottom: 0;
+        }
+
+        .gauge-fill {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 0;
+            transition: background 0.5s;
+        }
+
+        .gauge-center {
+            width: 120px;
+            height: 120px;
+            background: #1a1a2e;
+            border-radius: 50%;
+            position: absolute;
+            bottom: -60px;
+            left: 15px;
+        }
+
+        /* Auto-refresh indicator */
+        .auto-refresh {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .countdown {
+            font-family: monospace;
+            color: #4ade80;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌡️ Monitor Ambiental</h1>
+            <div class="status-badge">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Conectando...</span>
+            </div>
+        </header>
+
+        <!-- Nota de configuración (ocultar después de configurar) -->
+        <div class="config-note" id="configNote">
+            <h4>⚙️ Configuración Requerida</h4>
+            <p>Edita las variables al inicio del script:</p>
+            <ul style="margin: 10px 0 0 20px; line-height: 1.8;">
+                <li><code>GITHUB_USER</code> - Tu usuario de GitHub</li>
+                <li><code>GITHUB_REPO</code> - Nombre del repositorio</li>
+                <li><code>FILE_PATH</code> - Ruta al archivo data.json</li>
+            </ul>
+        </div>
+
+        <div class="error-message" id="errorMessage">
+            <h4>❌ Error de Conexión</h4>
+            <p id="errorText">No se pudieron obtener los datos</p>
+        </div>
+
+        <div class="cards-container">
+            <div class="card temperature">
+                <div class="card-icon">🌡️</div>
+                <div class="card-label">Temperatura</div>
+                <div class="card-value">
+                    <span id="tempValue">--</span><span>°C</span>
+                </div>
+                <div class="gauge-container">
+                    <div class="gauge">
+                        <div class="gauge-bg"></div>
+                        <div class="gauge-fill" id="tempGauge"></div>
+                        <div class="gauge-center"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card humidity">
+                <div class="card-icon">💧</div>
+                <div class="card-label">Humedad</div>
+                <div class="card-value">
+                    <span id="humValue">--</span><span>%</span>
+                </div>
+                <div class="gauge-container">
+                    <div class="gauge">
+                        <div class="gauge-bg"></div>
+                        <div class="gauge-fill" id="humGauge"></div>
+                        <div class="gauge-center"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <h3>📊 Información del Sistema</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Última Actualización</span>
+                    <span class="info-value" id="lastUpdate">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Dispositivo</span>
+                    <span class="info-value" id="deviceId">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Ubicación</span>
+                    <span class="info-value" id="location">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Estado</span>
+                    <span class="info-value" id="dataStatus">Esperando datos...</span>
+                </div>
+            </div>
+            <div class="auto-refresh">
+                🔄 Actualización automática en: <span class="countdown" id="countdown">30</span>s
+            </div>
+        </div>
+    </div>
+
+    <button class="refresh-btn" id="refreshBtn" onclick="fetchData()" title="Actualizar datos">
+        🔄
+    </button>
+
+    <script>
+        // ============== CONFIGURACIÓN ==============
+        // Cambiar estos valores según tu repositorio
+        const GITHUB_USER = 'TU_USUARIO';      // Tu usuario de GitHub
+        const GITHUB_REPO = 'TU_REPOSITORIO';  // Nombre del repositorio
+        const FILE_PATH = 'data.json';         // Ruta al archivo JSON
+        const BRANCH = 'main';                 // Rama (main o master)
+        
+        // Intervalo de actualización automática (en segundos)
+        const REFRESH_INTERVAL = 30;
+        // ==========================================
+
+        let countdown = REFRESH_INTERVAL;
+        let countdownInterval;
+
+        // Construir URL de la API de GitHub (raw content)
+        function getGitHubURL() {
+            // Usar raw.githubusercontent.com para obtener el contenido directamente
+            return `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${BRANCH}/${FILE_PATH}?t=${Date.now()}`;
+        }
+
+        // Función para obtener datos
+        async function fetchData() {
+            const btn = document.getElementById('refreshBtn');
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            btn.classList.add('loading');
+            statusText.textContent = 'Actualizando...';
+            errorMessage.style.display = 'none';
+
+            try {
+                const response = await fetch(getGitHubURL());
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                updateUI(data);
+                
+                statusDot.classList.remove('offline');
+                statusText.textContent = 'En línea';
+                document.getElementById('configNote').style.display = 'none';
+                
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                statusDot.classList.add('offline');
+                statusText.textContent = 'Error de conexión';
+                
+                document.getElementById('errorMessage').style.display = 'block';
+                document.getElementById('errorText').textContent = error.message;
+                document.getElementById('dataStatus').textContent = 'Error: ' + error.message;
+            }
+
+            btn.classList.remove('loading');
+            resetCountdown();
+        }
+
+        // Actualizar interfaz con los datos
+        function updateUI(data) {
+            // Temperatura
+            const temp = data.temperatura ?? data.temperature ?? '--';
+            document.getElementById('tempValue').textContent = temp;
+            updateGauge('tempGauge', temp, 0, 50, '#ef4444', '#f97316');
+            
+            // Humedad
+            const hum = data.humedad ?? data.humidity ?? '--';
+            document.getElementById('humValue').textContent = hum;
+            updateGauge('humGauge', hum, 0, 100, '#3b82f6', '#06b6d4');
+            
+            // Información adicional
+            document.getElementById('lastUpdate').textContent = 
+                data.timestamp ?? data.fechaHora ?? new Date().toLocaleString();
+            document.getElementById('deviceId').textContent = 
+                data.dispositivo ?? data.device ?? 'ESP32';
+            document.getElementById('location').textContent = 
+                data.ubicacion ?? data.location ?? 'No especificada';
+            document.getElementById('dataStatus').textContent = 'Datos recibidos correctamente';
+        }
+
+        // Actualizar gauge visual
+        function updateGauge(elementId, value, min, max, colorStart, colorEnd) {
+            const gauge = document.getElementById(elementId);
+            if (!gauge || value === '--') return;
+            
+            const percentage = Math.min(Math.max((value - min) / (max - min) * 100, 0), 100);
+            const degrees = (percentage / 100) * 180;
+            
+            gauge.style.background = `conic-gradient(
+                from 180deg,
+                ${colorStart} 0deg,
+                ${colorEnd} ${degrees}deg,
+                transparent ${degrees}deg,
+                transparent 180deg
+            )`;
+        }
+
+        // Countdown para próxima actualización
+        function startCountdown() {
+            countdownInterval = setInterval(() => {
+                countdown--;
+                document.getElementById('countdown').textContent = countdown;
+                
+                if (countdown <= 0) {
+                    fetchData();
+                }
+            }, 1000);
+        }
+
+        function resetCountdown() {
+            countdown = REFRESH_INTERVAL;
+            document.getElementById('countdown').textContent = countdown;
+        }
+
+        // Iniciar al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchData();
+            startCountdown();
+        });
+
+        // Detectar si la página está visible (pausar cuando está en segundo plano)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                clearInterval(countdownInterval);
+            } else {
+                fetchData();
+                startCountdown();
+            }
+        });
+    </script>
+</body>
+</html>
