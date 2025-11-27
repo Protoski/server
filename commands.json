@@ -1,6 +1,6 @@
 {
-  "relay1": false,
-  "relay2": true,
-  "lastUpdate": "2025-11-27T14:02:59.858Z",
+  "relay1": true,
+  "relay2": false,
+  "lastUpdate": "2025-11-27T14:03:41.247Z",
   "source": "web"
 }
