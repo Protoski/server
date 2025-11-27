@@ -1,1 +1,1 @@
-{"temperatura":24.3,"humedad":57.2,"relay1":true,"relay2":true,"timestamp":"2025-11-27 07:19:00","dispositivo":"ESP32-001","ubicacion":"Oficina"}
+{"temperatura":24.4,"humedad":57.7,"relay1":false,"relay2":false,"timestamp":"2025-11-27 07:20:00","dispositivo":"ESP32-001","ubicacion":"Oficina"}
